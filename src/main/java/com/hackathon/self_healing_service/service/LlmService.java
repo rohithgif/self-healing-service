@@ -13,26 +13,19 @@ public class LlmService {
 
     private final RestTemplate restTemplate;
 
-    @Value("${llm.service.url}")
-    private String llmServiceUrl;
+    private static final String LLM_SERVICE_URL = "http://localhost:8000/api/query-exception/";
 
-//    public String analyze(TransactionEvent event) {
-//        ResponseEntity<String> response = restTemplate.postForEntity(llmServiceUrl, event, String.class);
-//        return response.getBody();
-//    }
-
-        public String analyze(TransactionEvent event) {
-            String message = String.valueOf(event.getMessage()).toLowerCase();
-
-            if (message.contains("db") || message.contains("internal")) {
-                return "internal issue: simulated database error";
-            }
-
-            if (message.contains("api") || message.contains("partner") || message.contains("external")) {
-                return "external issue: simulated third-party service failure";
-            }
-
-            return "unknown issue: unable to classify";
+    public String analyze(TransactionEvent event) {
+        try {
+            ResponseEntity<String> response = restTemplate.postForEntity(
+                    LLM_SERVICE_URL,
+                    event,
+                    String.class
+            );
+            return response.getBody();
+        } catch (Exception e) {
+            System.err.println("LLM service call failed: " + e.getMessage());
+            return "internal issue: fallback response due to failure";
         }
     }
-
+}
